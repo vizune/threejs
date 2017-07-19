@@ -1,0 +1,25 @@
+Appearance:
+Misty / particles in scenary *
+
+Functionality:
+Loading screen
+Glowing orbs(?) randomly generated
+
+
+Orbs
+- Randomly generated around the map *
+- Does not collide with other objects
+- Randomly colors *
+- Glow added to orbs *
+- Cross hair
+- Raycaster to shoot at orbs
+- Orbs lose light when shot
+- Counter increases once intersected
+
+Improvements:
+Find a way to add a glow without PointLight, there's a restriction to number of shaders
+Multiple models at once ( trees / fox )
+
+Glitches
+You can walk through trees if you rotate and walk at the same time
+Ensure trees and orbs don't ever get the same position

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My first three.js app</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; }
+        canvas { width: 100%; height: 100% }
+    </style>
+</head>
+<body>
+    <script src="js/three.js"></script>
+    <script src="js/Detector.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/ObjectLoader.js"></script>
+    <script src="js/MTLLoader.js"></script>
+    <script src="js/OBJLoader.js"></script>
+    <script src="js/ColladaLoader.js"></script>
+    <script>
+        var keyboard = {};
+        var player = { height: 2.6, speed: 0.2, turnSpeed: Math.PI * 0.01};
+        var crate, crateTexture, crateNormalMap, crateBumpMap;
+
+        // Performance tester
+        (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//rawgit.com/mrdoob/stats.js/master/build/stats.min.js';document.head.appendChild(script);})()
+
+        // Detect WebGL support
+        if (! Detector.webgl) Detector.addGetWebGLMessage();
+
+        // Set the scene...
+        var scene = new THREE.Scene();
+
+        // Camera
+        var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+        camera.position.set( 0, player.height, -5 ); // x, y z
+        camera.lookAt( new THREE.Vector3( 0, player.height, 0 ) );
+
+        // Renderer
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        //shadows
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.BasicShadowMap;
+
+        document.body.appendChild( renderer.domElement );
+
+        // Responsive to viewport
+        window.addEventListener( 'resize', onWindowResize, false );
+        function onWindowResize() 
+        {
+            var width = window.innerWidth;
+            var height = window.innerHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        }
+
+        // Lighting
+        var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.3);
+        scene.add(ambientLight);
+
+        var pointLight = new THREE.PointLight( 0xFFFFFF, 0.5, 18 );
+        pointLight.position.set( 2, 6, -3);
+        pointLight.castShadow = true;
+        pointLight.shadow.camera.near = 0.1;
+        pointLight.shadow.camera.far = 25;
+        scene.add(pointLight);
+
+        var orb = new THREE.SphereGeometry( 0.5, 16, 8 );
+        
+        light1 = new THREE.PointLight( 0x5b21ee, 2, 50 );
+        light1.add( new THREE.Mesh( orb, new THREE.MeshBasicMaterial( { color: 0x5b21ee } )));
+        scene.add(light1);
+
+        light2 = new THREE.PointLight( 0xee2181, 2, 50 );
+        light2.add( new THREE.Mesh( orb, new THREE.MeshBasicMaterial( { color: 0xee2181 } )));
+        scene.add(light2);
+
+        light3 = new THREE.PointLight( 0x21ee34, 2, 50 );
+        light3.add( new THREE.Mesh( orb, new THREE.MeshBasicMaterial( { color: 0x21ee34 } )));
+        scene.add(light3);
+
+        // Skybox
+        var skyCube = new THREE.CubeTextureLoader()
+            .setPath( "./img/skybox/" )
+            .load( [ 'sky1.png', 'sky2.png', 'sky3.png', 'sky4.png', 'sky5.png', 'sky6.png' ] );
+        scene.background = skyCube;
+
+        // Floor
+        var meshFloor = new THREE.Mesh(
+
+            // More segments -> more polygons -> more detail (in some instances)
+            new THREE.PlaneGeometry( 10, 10, 10, 5 ),
+            new THREE.MeshPhongMaterial( { color: 0xFFFFFF } )
+        );
+        meshFloor.rotation.x -= Math.PI / 2;
+        meshFloor.receiveShadow = true;
+        scene.add(meshFloor);
+
+
+        var floorGeometry = new THREE.CubeGeometry( 10, 1, 10 );
+        var floorMaterial = new THREE.MeshLambertMaterial( { map: new THREE.TextureLoader().load( './img/ground.jpg' ), side: THREE.DoubleSide } )
+        var floorCube = new THREE.Mesh( floorGeometry, floorMaterial );
+        floorCube.position.y = -1;
+        //scene.add( floorCube );
+
+        // Model
+        var loader = new THREE.ObjectLoader();
+        loader.load( "./models/connie-lyn-needle-threejs/connie-lyn-needle.json", function(object) 
+        {
+                object.scale.set( .75, .75, .75 );
+                object.position.set( 0, 0, 2 );
+                //object.receiveShadow = true;
+                object.castShadow = false;
+                scene.add(object);
+
+                mixer = new THREE.AnimationMixer(object);
+
+        });
+
+        // Crate object
+        // Resource: https://opengameart.org/content/3-crate-textures-w-bump-normal
+        var textureLoader = new THREE.TextureLoader();
+        crateTexture = textureLoader.load("./img/crate_diffuse.png");
+        crateNormalMap = textureLoader.load("./img/crate_normal.png");
+        crateBumpMap = textureLoader.load("./img/crate_bump.png");
+        
+
+        crate = new THREE.Mesh(
+            new THREE.BoxGeometry( 1, 1, 1),
+            new THREE.MeshPhongMaterial( 
+                { 
+                    color: 0xFFFFFF,
+                    map: crateTexture,
+                    bumpMap: crateBumpMap,
+                    normalMap: crateNormalMap
+                } )
+        );
+        crate.receiveShadow = true;
+        crate.castShadow = true;
+        crate.position.set(0,0.5,0);
+        scene.add(crate);
+
+        // MTL Model
+        // Resource: http://kenney.nl/assets/nature-pack-extended
+        var mtlLoader = new THREE.MTLLoader();
+	    mtlLoader.load("models/Models/naturePack_160.mtl", function(materials){
+		
+		materials.preload();
+		var objLoader = new THREE.OBJLoader();
+		objLoader.setMaterials(materials);
+		
+		objLoader.load("models/Models/naturePack_160.obj", function(mesh){
+		
+                mesh.traverse(function(node){
+                    if( node instanceof THREE.Mesh ){
+                        node.castShadow = true;
+                        node.receiveShadow = true;
+                    }
+                });
+            
+                scene.add(mesh);
+                mesh.scale.set( 1.2, 1.2, 1.2 );
+                mesh.position.set(-4, 0, 4);
+            });
+            
+        });
+
+        function update() {
+            var time = Date.now() * 0.0005;
+            light1.position.x = Math.sin( time * 0.7 ) * 30;
+            light1.position.y = Math.cos( time * 0.5 ) * 40;
+            light1.position.z = Math.cos( time * 0.3 ) * 30;
+
+            light2.position.x = Math.cos( time * 0.3 ) * 30;
+            light2.position.y = Math.sin( time * 0.5 ) * 40;
+            light2.position.z = Math.sin( time * 0.7 ) * 30;
+
+            light3.position.x = Math.sin( time * 0.7 ) * 30;
+            light3.position.y = Math.cos( time * 0.3 ) * 40;
+            light3.position.z = Math.sin( time * 0.5 ) * 30;
+
+        };
+
+        // Render the scene
+        function render() {
+            renderer.render( scene, camera );
+        }
+
+
+        // run game loop (update, render, repeat)
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if(keyboard[37])
+            { // left arrow key
+                camera.rotation.y -= player.turnSpeed;
+            }
+
+            if(keyboard[39])
+            { // right arrow key
+                camera.rotation.y += player.turnSpeed;
+            }
+
+            if(keyboard[87])
+            { // W key
+                camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
+		        camera.position.z -= -Math.cos(camera.rotation.y) * player.speed;
+            }
+
+            if(keyboard[83])
+            { // S key
+                camera.position.x += Math.sin(camera.rotation.y) * player.speed;
+		        camera.position.z += -Math.cos(camera.rotation.y) * player.speed;
+            }
+
+            if(keyboard[65])
+            { // A key
+                camera.position.x += Math.sin(camera.rotation.y + Math.PI/2) * player.speed;
+		        camera.position.z += -Math.cos(camera.rotation.y + Math.PI/2) * player.speed;
+            }
+
+            if(keyboard[68])
+            { // D key
+                camera.position.x += Math.sin(camera.rotation.y - Math.PI/2) * player.speed;
+		        camera.position.z += -Math.cos(camera.rotation.y - Math.PI/2) * player.speed;
+            }
+            
+            update();
+            render();
+        }
+
+        // Keyboard Controls
+        function keyDown(event) {
+            keyboard[event.keyCode] = true;
+        }
+
+        function keyUp(event) {
+            keyboard[event.keyCode] = false;
+        }
+
+        window.addEventListener( 'keydown', keyDown );
+        window.addEventListener( 'keyup', keyUp );
+
+        animate();
+    </script>
+</body>
+</html>

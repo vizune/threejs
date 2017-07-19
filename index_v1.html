@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=utf-8>
+    <title>My first three.js app</title>
+    <style>
+        body, html { margin: 0; padding: 0; }
+        canvas { width: 100%; height: 100% }
+    </style>
+</head>
+<body>
+    <script src="js/three.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/ObjectLoader.js"></script>
+    <script>
+        (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//rawgit.com/mrdoob/stats.js/master/build/stats.min.js';document.head.appendChild(script);})()
+
+        var scene = new THREE.Scene();
+
+        var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        document.body.appendChild( renderer.domElement );
+
+        // responsive to viewport
+        window.addEventListener( 'resize', function() 
+        {
+            var width = window.innerWidth;
+            var height = window.innerHeight;
+            renderer.setSize( width, height );
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        // create shape
+        var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+
+        // Can also use side:THREE.FrontSide & side: THREE.BackSide
+        var cubeMaterials = 
+        [
+            new THREE.MeshLambertMaterial( 
+                // right side
+                { 
+                    map: new THREE.TextureLoader().load( 'img/texture-box.gif' ), 
+                    side: THREE.DoubleSide
+                }
+            ),
+
+            new THREE.MeshLambertMaterial( 
+                // left side
+                { 
+                    map: new THREE.TextureLoader().load( 'img/texture-box.gif' ), 
+                    side: THREE.DoubleSide
+                }
+            ),
+            new THREE.MeshLambertMaterial( 
+                // top side
+                { 
+                    map: new THREE.TextureLoader().load( 'img/texture-box.gif' ), 
+                    side: THREE.DoubleSide
+                }
+            ),
+            new THREE.MeshLambertMaterial( 
+                // bottom side
+                { 
+                    map: new THREE.TextureLoader().load( 'img/texture-box.gif' ), 
+                    side: THREE.DoubleSide
+                }
+            ),
+            new THREE.MeshLambertMaterial( 
+                // front side
+                { 
+                    map: new THREE.TextureLoader().load( 'img/texture-box.gif' ), 
+                    side: THREE.DoubleSide
+                }
+            ),
+            new THREE.MeshLambertMaterial(
+                // back side
+                { 
+                    map: new THREE.TextureLoader().load( 'img/texture-box.gif' ), 
+                    side: THREE.DoubleSide
+                }
+            )
+        ];
+
+        // create material
+        var texture = new THREE.MeshFaceMaterial( cubeMaterials );
+        var material = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true } );
+        var cube = new THREE.Mesh( geometry, texture );
+
+        scene.add( cube );
+        camera.position.z = 5;
+
+        // Floor
+        var floorGeometry = new THREE.CubeGeometry( 10, 1, 10 );
+        var floorMaterial = new THREE.MeshLambertMaterial( { map: new THREE.TextureLoader().load( 'img/ground.jpg' ), side: THREE.DoubleSide } )
+        var floorCube = new THREE.Mesh( floorGeometry, floorMaterial );
+        floorCube.position.y = -1;
+        scene.add( floorCube );
+
+        // Model
+        var loader = new THREE.ObjectLoader();
+        loader.load
+        (
+            'models/connie-lyn-needle-threejs/connie-lyn-needle.json',
+            function( object )
+            {
+                object.position.set( 0, -0.5, 2);
+                scene.add( object );
+            }
+        );
+        
+        // Parameters = color & intensity
+        var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.5);
+        scene.add( ambientLight );
+
+        // Parameters: Color, Intensity
+        var spotlight = new THREE.SpotLight( 0x1820d0, 1);
+        spotlight.position.set( 0, 3, 5 );
+        scene.add( spotlight );
+
+        // Parameters: Color, Intensity
+        var spotlight2 = new THREE.SpotLight( 0xec1475, 2);
+        spotlight2.position.set( 0, 1, 0 );
+        scene.add( spotlight2 );
+
+        var directionalLight = new THREE.DirectionalLight( 0xFFFFFF, 1 );
+        directionalLight.position.set( 4, 6, 3 );
+        scene.add( directionalLight );
+
+        var update = function() {
+            //cube.rotation.x += 0.01;
+            //cube.rotation.y += 0.005;
+
+            var time = Date.now() * 0.0005;
+            spotlight.position.x = Math.sin( time * 0.7 ) * 30;
+            spotlight.position.y = Math.cos( time * 0.5 ) * 40;
+            spotlight.position.z = Math.cos( time * 0.3 ) * 30;
+
+            spotlight2.position.x = Math.cos( time * 0.3 ) * 30;
+            spotlight2.position.y = Math.sin( time * 0.5 ) * 40;
+            spotlight2.position.z = Math.sin( time * 0.7 ) * 30;
+        };
+
+        // draw scene
+        var render = function() {
+            renderer.render( scene, camera );
+        }
+
+        // run game loop (update, render, repeat)
+        var gameLoop = function() {
+            requestAnimationFrame( gameLoop );
+            update();
+            render();
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

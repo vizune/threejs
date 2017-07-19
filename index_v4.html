@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My first three.js app</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; }
+        canvas { width: 100%; height: 100% }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <script src="js/three.js"></script>
+    <script src="js/Detector.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/MTLLoader.js"></script>
+    <script src="js/OBJLoader.js"></script>
+    <script src="js/ColladaLoader.js"></script>
+    <script src="js/stats.min.js"></script>
+    <script>
+        var keyboard = {};
+        var player = { height: 1.8, speed: 0.15, turnSpeed: Math.PI * 0.01};
+        var crate, crateTexture, crateNormalMap, crateBumpMap;
+        var floorTexture, floorNormalMap, floorBumpMap;
+        var container, stats;
+        var RESOURCES_LOADED = false;
+
+        // Detect WebGL support
+        if (! Detector.webgl) Detector.addGetWebGLMessage();
+
+        var loadingScreen = {
+            scene: new THREE.Scene(),
+            camera: new THREE.PerspectiveCamera( 90, window.innerWidth/window.innerHeight, 0.1, 1000 ),
+            box: new THREE.Mesh(
+                new THREE.BoxGeometry( 0.5, 0.5, 0.5 ),
+                new THREE.MeshBasicMaterial( { color: 0x0cd788 })
+            )
+        };
+        var loadingManager;
+        var RESOURCES_LOADED = false;
+
+        // Model
+        // Fox: https://clara.io/view/1a03ac6b-d6b5-4c2d-9f1a-c80068311396#
+        // Tree: http://kenney.nl/assets/nature-pack-extended
+        // Wand: https://www.turbosquid.com/FullPreview/Index.cfm/ID/810456
+        var models = {
+            /*fox: {
+                obj:"./models/fox/low-poly-fox-by-pixelmannen.obj",
+                mtl:"./models/fox/low-poly-fox-by-pixelmannen.mtl",
+                mesh: null,
+                castShadow: false
+            },*/
+            /*tree: {
+                obj:"models/Models/naturePack_160.obj",
+                mtl:"models/Models/naturePack_160.mtl",
+                mesh: null,
+            },*/
+            wand: {
+                obj:"models/wand.obj",
+                mtl:"models/wand.mtl",
+                mesh: null,
+            }
+        };
+        var meshes = {};
+
+        //function init() {
+            container = document.getElementById( 'container' );
+
+            // Set the scene...
+            var scene = new THREE.Scene();
+
+            // FOG
+            scene.fog = new THREE.Fog( 0xFFFFFF, 0.1, 75 ); // Hex, Near, Far
+
+            // LOADING SCREEN
+            loadingScreen.box.position.set(0,0,5);
+            loadingScreen.camera.lookAt(loadingScreen.box.position);
+            loadingScreen.scene.add(loadingScreen.box);
+
+            loadingManager = new THREE.LoadingManager();
+
+            loadingManager.onProgress = function(item, loaded, total){
+                console.log(item, loaded, total);
+            };
+            
+            loadingManager.onLoad = function(){
+                console.log("loaded all resources");
+                RESOURCES_LOADED = true;
+                onResourcesLoaded();
+            };
+
+            // Responsive to viewport
+            window.addEventListener( 'resize', onWindowResize, false );
+            function onWindowResize() 
+            {
+                var width = window.innerWidth;
+                var height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            }
+            
+            // Lighting
+            var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.3);
+            scene.add(ambientLight);
+
+            var pointLight = new THREE.PointLight( 0xFFFFFF, 0.5, 18 );
+            pointLight.position.set( 2, 6, -3);
+            pointLight.castShadow = true;
+            pointLight.shadow.camera.near = 0.1;
+            pointLight.shadow.camera.far = 25;
+            scene.add(pointLight);
+
+            var orb = new THREE.SphereGeometry( 0.5, 16, 8 );
+            
+            light1 = new THREE.PointLight( 0x5b21ee, 2, 50 );
+            light1.add( new THREE.Mesh( orb, new THREE.MeshBasicMaterial( { color: 0x5b21ee } )));
+            scene.add(light1);
+
+            light2 = new THREE.PointLight( 0xee2181, 2, 50 );
+            light2.add( new THREE.Mesh( orb, new THREE.MeshBasicMaterial( { color: 0xee2181 } )));
+            scene.add(light2);
+
+            light3 = new THREE.PointLight( 0x21ee34, 2, 50 );
+            light3.add( new THREE.Mesh( orb, new THREE.MeshBasicMaterial( { color: 0x21ee34 } )));
+            scene.add(light3);
+
+            // Skybox
+            var skyCube = new THREE.CubeTextureLoader( loadingManager )
+                .setPath( "./img/skybox/" )
+                .load( [ 'sky1.png', 'sky2.png', 'sky3.png', 'sky4.png', 'sky5.png', 'sky6.png' ] );
+            scene.background = skyCube;
+
+            // TEXTURE LOADER
+            var textureLoader = new THREE.TextureLoader( loadingManager );
+
+            // Floor
+            floorTexture = textureLoader.load("./img/grass/grass.jpg");
+            floorNormalMap = textureLoader.load("./img/grass/grass_n.jpg");
+            floorBumpMap = textureLoader.load("./img/grass/grass_h.jpg");
+            var meshFloor = new THREE.Mesh(
+
+                // More segments -> more polygons -> more detail (in some instances)
+                new THREE.PlaneGeometry( 70, 70, 70, 10 ),
+                new THREE.MeshPhongMaterial( 
+                    { 
+                        color: 0x014020,
+                        map: floorTexture,
+                        bumpMap: floorBumpMap,
+                        normalMap: floorNormalMap
+                    } 
+                )
+            );
+            meshFloor.rotation.x -= Math.PI / 2;
+            meshFloor.receiveShadow = true;
+            scene.add(meshFloor);
+
+
+            var particles = new THREE.Geometry();
+            var pMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 1,
+                transparent:true,
+                opacity:.25,
+                // map : particle_texture
+                });
+            for( var i=0; i<500; i++ ){
+                var x = (Math.random() - 0.5 ) * Math.sin(i)*200;
+                var y = (Math.random() - 0.5 ) * Math.cos(i)*200;
+                var z = (Math.random() - 0.5 ) * Math.sin(i)*200;
+                particles.vertices.push(new THREE.Vector3(x,y,z));
+            }
+            var particleSystem_1 = new THREE.Points(particles,pMaterial);
+            //scene.add(particleSystem_1);
+            
+
+            // Crate object
+            // Resource: https://opengameart.org/content/3-crate-textures-w-bump-normal
+            
+            crateTexture = textureLoader.load("./img/crate_diffuse.png");
+            crateNormalMap = textureLoader.load("./img/crate_normal.png");
+            crateBumpMap = textureLoader.load("./img/crate_bump.png");
+            
+
+            crate = new THREE.Mesh(
+                new THREE.BoxGeometry( 1, 1, 1),
+                new THREE.MeshPhongMaterial( 
+                    { 
+                        color: 0xFFFFFF,
+                        map: crateTexture,
+                        bumpMap: crateBumpMap,
+                        normalMap: crateNormalMap
+                    } )
+            );
+            crate.receiveShadow = true;
+            crate.castShadow = true;
+            crate.position.set(0,0.5,0);
+            scene.add(crate);
+
+            // MODELS
+            for( var key in models ) {
+                (function(key) {
+
+                    var mtlLoader = new THREE.MTLLoader(loadingManager);
+
+                    mtlLoader.load(models[key].mtl, function(materials) {
+
+                        materials.preload();
+                        var objLoader = new THREE.OBJLoader(loadingManager);
+
+                        objLoader.load( models[key].obj, function(mesh) {
+                            mesh.traverse(function(node){
+                                if(node instanceof THREE.Mesh ) {
+                                    if('castShadow' in models[key])
+                                        node.castChadow = models[key].castShadow;
+
+                                    else
+                                        node.castShadow = true;
+
+                                    if('receiveShadow' in models[key]) 
+                                        mode.receiveShadow = models[key].receiveShadow;
+                                    else
+                                        node.castShadow = true;     
+                                }
+                            });
+                            models[key].mesh = mesh;
+                        });
+                    });
+                })(key);
+            }
+
+            // MTL Model
+            // Resource: http://kenney.nl/assets/nature-pack-extended
+            var mtlLoader = new THREE.MTLLoader();
+            var objLoader = new THREE.OBJLoader();
+            for( var i=0; i<100; i++ ){
+            mtlLoader.load("models/Models/naturePack_160.mtl", function(materials){
+                materials.preload();
+                objLoader.setMaterials(materials);
+            
+                objLoader.load("models/Models/naturePack_160.obj", function(mesh){
+
+                    
+                        mesh.traverse(function(node){
+                        if( node instanceof THREE.Mesh ){
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+                        }
+                    });
+
+
+                    mesh.position.x = Math.random() * 50 - 30;
+					mesh.position.y = 0;
+					mesh.position.z = Math.random() * 50 - 30;
+
+					mesh.scale.x = 1;
+					mesh.scale.y = Math.random() + 0.5;
+					mesh.scale.z = Math.random() + 0.5;
+                
+                    //mesh.scale.set( 1, 1, 1 );
+                    //mesh.position.set(-4, 0, 4);
+                    scene.add(mesh);
+            
+                });
+                
+            });
+            }
+
+            /*mtlLoader.load("./models/fox/low-poly-fox-by-pixelmannen.mtl", function(materials2){
+                materials2.preload();
+                objLoader.setMaterials(materials2);
+            
+                objLoader.load("./models/fox/low-poly-fox-by-pixelmannen.obj", function(mesh2){
+            
+                    mesh2.traverse(function(node){
+                        if( node instanceof THREE.Mesh ){
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+                        }
+                    });
+                
+                    mesh2.scale.set( .02, .02, .02 );
+                    mesh2.position.set( 3, 0, 2 );
+                    mesh2.rotation.y = Math.PI/4;
+                    scene.add(mesh2);
+                });
+                
+            });*/
+
+            // Renderer
+            var renderer = new THREE.WebGLRenderer();
+            renderer.setPixelRatio( window.devicePixelRatio );
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.BasicShadowMap;
+            //renderer.setClearColor ( scene.fog.color );
+            document.body.appendChild( renderer.domElement );
+
+            // Camera
+            var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+            camera.position.set( 0, player.height, -1 ); // x, y z
+            camera.lookAt( new THREE.Vector3( 0, player.height, 0 ) );
+
+            // STATS
+            stats = new Stats();
+            container.appendChild( stats.dom );
+
+            animate();
+
+        //}; // end of init
+
+        function update() {
+            var time = Date.now() * 0.0005;
+            light1.position.x = Math.sin( time * 0.7 ) * 30;
+            light1.position.y = Math.cos( time * 0.5 ) * 40;
+            light1.position.z = Math.cos( time * 0.3 ) * 30;
+
+            light2.position.x = Math.cos( time * 0.3 ) * 30;
+            light2.position.y = Math.sin( time * 0.5 ) * 40;
+            light2.position.z = Math.sin( time * 0.7 ) * 30;
+
+            light3.position.x = Math.sin( time * 0.7 ) * 30;
+            light3.position.y = Math.cos( time * 0.3 ) * 40;
+            light3.position.z = Math.sin( time * 0.5 ) * 30;
+
+        };
+
+        // Render the scene
+        var render = function() {
+            renderer.render( scene, camera );
+        }
+
+        function onResourcesLoaded() {
+            // Clone models into meshes.
+            //meshes["fox"] = models.fox.mesh.clone();
+            //meshes["tree"] = models.tree.mesh.clone();
+            
+            //meshes["tree"].position.set(-4, 0, 4);
+            //meshes["tree"].scale.set( 1.2, 1.2, 1.2 );
+
+            //meshes["fox"].scale.set( .02, .02, .02 );
+            //meshes["fox"].position.set( 3, 0, 2 );
+            //meshes["fox"].rotation.y = Math.PI/4;
+            
+            //scene.add(meshes["tree"]);
+            //scene.add(meshes["fox"]);
+            
+            // player
+            meshes["player"] = models.wand.mesh.clone();
+            meshes["player"].scale.set( .002, .002, .002 );
+
+            scene.add(meshes["player"]);
+
+
+        }
+
+        function animate() {
+
+            if( RESOURCES_LOADED == false ){
+                requestAnimationFrame(animate);
+                
+                loadingScreen.box.position.x -= 0.05;
+                if( loadingScreen.box.position.x < -10 ) loadingScreen.box.position.x = 10;
+                loadingScreen.box.position.y = Math.sin(loadingScreen.box.position.x);
+                
+                renderer.render(loadingScreen.scene, loadingScreen.camera);
+                return;
+            }
+
+            requestAnimationFrame(animate);
+            
+            if(keyboard[37])
+            { // left arrow key
+                camera.rotation.y -= player.turnSpeed;
+            }
+
+            if(keyboard[39])
+            { // right arrow key
+                camera.rotation.y += player.turnSpeed;
+            }
+
+            if(keyboard[87])
+            { // W key
+                camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
+		        camera.position.z -= -Math.cos(camera.rotation.y) * player.speed;
+            }
+
+            if(keyboard[83])
+            { // S key
+                camera.position.x += Math.sin(camera.rotation.y) * player.speed;
+		        camera.position.z += -Math.cos(camera.rotation.y) * player.speed;
+            }
+
+            if(keyboard[65])
+            { // A key
+                camera.position.x += Math.sin(camera.rotation.y + Math.PI/2) * player.speed;
+		        camera.position.z += -Math.cos(camera.rotation.y + Math.PI/2) * player.speed;
+            }
+
+            if(keyboard[68])
+            { // D key
+                camera.position.x += Math.sin(camera.rotation.y - Math.PI/2) * player.speed;
+		        camera.position.z += -Math.cos(camera.rotation.y - Math.PI/2) * player.speed;
+            }
+
+            // First person model positioning / rotating with the camera view
+            var time = Date.now() * 0.0005;
+
+            meshes["player"].position.set(
+                camera.position.x - Math.sin(camera.rotation.y),
+                camera.position.y - 0.5 + Math.sin(time*4 + camera.position.x + camera.position.z) * 0.01,
+                camera.position.z + Math.cos(camera.rotation.y)
+            );
+
+            meshes["player"].rotation.set(
+                camera.rotation.x,
+                camera.rotation.y - Math.PI/2.1,
+                camera.rotation.z
+            );
+            
+            update();
+            renderer.render( scene, camera );
+            stats.update();
+        }
+
+        // Keyboard Controls
+        function keyDown(event) {
+            keyboard[event.keyCode] = true;
+        }
+
+        function keyUp(event) {
+            keyboard[event.keyCode] = false;
+        }
+
+        window.addEventListener( 'keydown', keyDown );
+        window.addEventListener( 'keyup', keyUp );
+
+        //window.onload = init;
+
+    </script>
+</body>
+</html>
