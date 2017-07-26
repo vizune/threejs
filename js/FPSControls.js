@@ -164,7 +164,7 @@ THREE.PointerLockControls = function ( camera, mass, playerHeight, doubleJump, w
 	scope.mass = mass || 100;
 	scope.originalMass = mass;
 	scope.walkingSpeed = 3000; // Higher = slower
-	scope.speed = 1700; // Movement speed - originally 900
+	scope.speed = 1300; // Movement speed
 	scope.jumpFactor = 90; // Jump height
 	scope.velocity = new THREE.Vector3(1, 1, 1);
 
@@ -249,7 +249,7 @@ THREE.PointerLockControls = function ( camera, mass, playerHeight, doubleJump, w
 
 
 			if (!crouched && scope.isOnObject) {
-				//console.log("Not Crouched");
+				console.log("Not Crouched");
 				halfHeight = scope.getPlayer().position.y - (playerHeight * 0.2);
 				fullHeight = scope.getPlayer().position.y + (playerHeight * 0.2);
 			}

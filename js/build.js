@@ -1,76 +1,3 @@
-﻿<!DOCTYPE html>
-<html>
-<head>
-	<title>My first three.js app</title>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-	<style>
-		body, html { margin: 0; padding: 0; overflow: hidden; }
-		canvas { width: 100%; height: 100% }
-        #blocker {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-        #instructions {
-            width: 100%;
-            height: 100%;
-            display: -webkit-box;
-            display: -moz-box;
-            display: box;
-            -webkit-box-orient: horizontal;
-            -moz-box-orient: horizontal;
-            box-orient: horizontal;
-            -webkit-box-pack: center;
-            -moz-box-pack: center;
-            box-pack: center;
-            -webkit-box-align: center;
-            -moz-box-align: center;
-            box-align: center;
-            color: #ffffff;
-            text-align: center;
-            cursor: pointer;
-        }
-		#container {
-			position: fixed;
-		}
-		#counter {
-			position: fixed;
-			right: 0;
-			bottom: 0;
-			font-size: 3.5rem;
-			padding: .5rem;
-			color:#000;
-			background: rgba(255,255,255,.4);
-		}
-	</style>
-</head>
-<body>
-<div id="container"></div>
-<div id="counter"></div>
-
-    <script src="js/three.js"></script>
-    <script src="js/Detector.js"></script>
-    <!--<script src="js/OrbitControls.js"></script>-->
-    <script src="js/MTLLoader.js"></script>
-    <script src="js/OBJLoader.js"></script>
-   	<!--<script src="js/PointerLockControls.js"></script>-->
-    <script src="js/stats.min.js"></script>
-	<script src="js/FPSControls.js"></script>
-	<script src="js/pointerlock.js"></script>
-	
-<div id="blocker">
-	<div id="instructions">
-		<span style="font-size:40px">Click to play</span>
-		<br />
-		(W, A, S, D = Move, <!--SPACE = Jump, -->MOUSE = Look around)
-	</div>
-</div>
-
-
-<script>
-
 	var scene, renderer, camera;    
     var crate, crateTexture, crateNormalMap, crateBumpMap;
 	var wand, wandTexture, wandNormalMap, wandBumpMap;
@@ -170,12 +97,10 @@
 	    scene = new THREE.Scene();
 
 		// Camera
-		//camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 0.1, 9000 );
-		//controls = new THREE.PointerLockControls( camera, 0, 1.5, true, objects );
-		//scene.add( controls.getPlayer() );
-		
-		camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 9000 );
-		controls = new THREE.PointerLockControls( camera, 0, 10, true, objects );
+		//camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 9000 );
+		camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 0.1, 9000 );
+		controls = new THREE.PointerLockControls( camera, 0, 1.5, true, objects );
+		//camera.lookAt( new THREE.Vector3( 0, 0, 0 ) );
 		scene.add( controls.getPlayer() );
 		
 
@@ -242,7 +167,7 @@
 
 		raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
 
-		scene.fog = new THREE.Fog( 0xcccccc, camera.position.z, 500 );
+		scene.fog = new THREE.Fog( 0xcccccc, camera.position.z, 350 );
 
 	    // LOADING SCREEN
 	    loadingScreen.box.position.set(0,0,5);
@@ -284,11 +209,11 @@
 	    var textureLoader = new THREE.TextureLoader( loadingManager );
 
 	    // Floor
-		floorTexture = textureLoader.load("img/grass/pixel.jpg");
+		floorTexture = textureLoader.load("img/grass/grass.jpg");
 	    floorNormalMap = textureLoader.load("img/grass/grass_n.jpg");
 	    floorBumpMap = textureLoader.load("img/grass/grass_h.jpg");
 
-		floorTile = 128;
+		floorTile = 512;
 
 		floorTexture.wrapS = THREE.RepeatWrapping;
 		floorTexture.wrapT = THREE.RepeatWrapping;
@@ -305,15 +230,14 @@
 		var floorHeight = 1000;
 		//floorGeometry = new THREE.SphereGeometry(floorHeight, 10, 6, 0, (Math.PI * 2), 0, 0.2);
 		//floorGeometry.applyMatrix( new THREE.Matrix4().makeTranslation(0, -floorHeight, 0) );
-		floorGeometry = new THREE.PlaneGeometry(floorHeight, floorHeight, 10, 6);
-		
+		floorGeometry = new THREE.PlaneGeometry(floorHeight, floorHeight, 10, 6,);
 
 		var floorMaterial = new THREE.MeshPhongMaterial( 
 			    { 
 				    //color: 0x1f7e4e,
 				    map: floorTexture,
-				    //bumpMap: floorBumpMap,
-				    //normalMap: floorNormalMap
+				    bumpMap: floorBumpMap,
+				    normalMap: floorNormalMap
 			    } 
 		    )
 
@@ -326,16 +250,16 @@
 	    var particles = new THREE.Geometry();
 	    var pMaterial = new THREE.PointsMaterial({
 		    color: 0xffffff,
-		    size: .25,
+		    size: .2,
 		    transparent:true,
 		    opacity:.25,
 		    // map : particle_texture
 	    });
 
-	    for( var i=0; i<900; i++ ){
-		    var x = (Math.random() - 0.5 ) * Math.sin(i)*800;
-		    var y = (Math.random() - 0.5 ) * Math.cos(i)* 50;
-		    var z = (Math.random() - 0.5 ) * Math.sin(i)*800;
+	    for( var i=0; i<750; i++ ){
+		    var x = (Math.random() - 0.5 ) * Math.sin(i)*200;
+		    var y = (Math.random() - 0.5 ) * Math.cos(i)*200;
+		    var z = (Math.random() - 0.5 ) * Math.sin(i)*200;
 
 		    particles.vertices.push(new THREE.Vector3(x,y,z));
 	    }
@@ -365,6 +289,27 @@
 	    crate.position.set(20,1,0);
 		//objects.push( crate );
 	    //scene.add(crate);
+		
+		
+		// Boxes
+		var boxGeometry = new THREE.BoxGeometry( 20, 20, 20 );
+		var boxTexture1 = new THREE.ImageUtils.loadTexture("./img/crate_diffuse.png");
+		var boxMaterial = new THREE.MeshBasicMaterial( {map: boxTexture1, reflectivity: 0.8} );
+		var boxZ;
+		for ( var i = 0; i < 850; i ++ ) {
+
+			var boxmesh = new THREE.Mesh( boxGeometry, boxMaterial);
+
+			boxZ = 50;
+			boxmesh.position.x = Math.floor( Math.random() * 20 - 10 ) * 20;
+			boxmesh.position.y = Math.floor( Math.random() * 20 ) * boxZ + 10;
+			boxmesh.position.z = Math.floor( Math.random() * 20 - 10 ) * 20;
+
+			boxes.push( boxmesh );
+			objects.push( boxmesh );
+			scene.add( boxmesh );
+		}
+		
 
 	    // MTL Model
 	    // Resource: https://www.turbosquid.com/FullPreview/Index.cfm/ID/1008420
@@ -372,8 +317,30 @@
 	    var objLoader = new THREE.OBJLoader(loadingManager);
 
 		// Boxes
-		var boxGeometry = new THREE.BoxGeometry( 10, 100, 10 );
-		var boxMaterial = new THREE.MeshPhongMaterial( {color: 0xFFFFFF, opacity: 0, transparent: true});
+		var boxGeometry = new THREE.CylinderGeometry( 1.5, 1.5, 15, 20 );
+		var boxMaterial = new THREE.MeshPhongMaterial( {color: 0xfffff} );
+		var boxZ;
+		
+		for( var i=0; i<200; i++ ){
+		
+			var randNumX = 0;
+			var randNumX = Math.floor(Math.random() * 65 - 30) * 5;
+
+			var randNumZ = 0;
+			var randNumZ = Math.floor(Math.random() * 65 - 30) * 5;
+
+			var boxmesh = new THREE.Mesh( boxGeometry, boxMaterial );
+			
+			boxZ = 10;
+			boxmesh.position.x = randNumX;
+			boxmesh.position.y = 0.5;
+			boxmesh.position.z = randNumZ;
+
+			//boxes.push( boxmesh );
+			objects.push( boxmesh );
+			scene.add( boxmesh );
+		
+		}
 
 		    mtlLoader.load("models/tree.mtl", function(materials){
 			    materials.preload();
@@ -381,63 +348,45 @@
 
 				for( var i=0; i<200; i++ ){
 				
-			    objLoader.load("models/tree.obj", function(tree){
+			    objLoader.load("models/tree.obj", function(mesh){
 					
 						
-					    tree.traverse(function(node){
+					    mesh.traverse(function(node){
 					    if( node instanceof THREE.Mesh ){
 						    node.castShadow = true;
 						    node.receiveShadow = true;
 					    }
 				    });
 
-					var randPosX = 0;
-						randPosX = Math.floor(Math.random() * 65 - 30) * 14;
+					var randNumX = 0;
+					var randNumX = Math.floor(Math.random() * 65 - 30) * 5;
 
-					var randPosZ = 0;
-						randPosZ = Math.floor(Math.random() * 65 - 30) * 12;
-					
-					var randScaleX = 0;
-						randScaleX = Math.random() + 5;
-						
-					var randScaleY = 0;
-						randScaleY = Math.random() + 6;
-						
-					var randScaleZ = 0;
-						randScaleZ = Math.random() + 7;
-						
-					var randRotate = 0;
-						randRotate = Math.random() + 0.5;
+					var randNumZ = 0;
+					var randNumZ = Math.floor(Math.random() * 65 - 30) * 5;
 
 					var boxmesh = new THREE.Mesh( boxGeometry, boxMaterial );
 
-					boxmesh.position.x = randPosX;
+					boxZ = 10;
+					boxmesh.position.x = randNumX;
 					boxmesh.position.y = 0.5;
-					boxmesh.position.z = randPosZ;
-					
-					tree.position.x =  randPosX;
-                    tree.position.y = 0.5;
-                    tree.position.z = randPosZ;
-					
-					//boxmesh.scale.x = randScaleX;
-                    //boxmesh.scale.y = randScaleY;
-                    //boxmesh.scale.z = randScaleZ;
-					
-					tree.scale.x = randScaleX;
-                    tree.scale.y = randScaleY;
-                    tree.scale.z = randScaleZ;
-					
-					boxmesh.rotation.y = randRotate;
-					
-					tree.rotation.y = randRotate;
+					boxmesh.position.z = randNumZ;
 
 					//boxes.push( boxmesh );
-					objects.push( boxmesh );
-					scene.add( boxmesh );
+					//objects.push( boxmesh );
+					//scene.add( boxmesh );
+
+                    mesh.position.x =  randNumX;
+                    mesh.position.y = 0.5;
+                    mesh.position.z = randNumZ;
+
+                    mesh.scale.x = Math.random() + 0.5;
+                    mesh.scale.y = Math.random() + 0.5;
+                    mesh.scale.z = Math.random() + 1.5;
+
+                    mesh.rotation.y = Math.random() + 0.5;
 
 					//boxes.push( mesh );
-					objects.push( tree );
-					scene.add( tree );
+					//scene.add( mesh );
 
 					});
 				
@@ -451,26 +400,28 @@
 			var sphereColors = [0xff4a6b, 0x3b2f93, 0x39f0de, 0xf9d400];
 			var randColor =  sphereColors[Math.floor(Math.random() * sphereColors.length)];
 
-			var sphereGeometry = new THREE.SphereGeometry( 4, 32, 16 );
+			var sphereGeometry = new THREE.SphereGeometry( 2, 16, 8 );
 	    	var sphereMaterial = new THREE.MeshBasicMaterial( { color: randColor } );
 	    	var sphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
 			var randNumX = 0;
-			var randNumX = Math.floor(Math.random() * 55 - 30) * 8;
+			var randNumX = Math.floor(Math.random() * 55 - 30) * 5;
 
 			var randNumZ = 0;
-			var randNumZ = Math.floor(Math.random() * 55 - 30) * 8;
+			var randNumZ = Math.floor(Math.random() * 55 - 30) * 5;
 
-			sphere.position.set(randNumX, 10, randNumZ);
+			sphere.position.set(randNumX, 1.5, randNumZ);
 
 			
 			light = new THREE.PointLight( randColor, 2, 50 );
 			light.add( new THREE.Mesh( sphereGeometry, sphereMaterial));
 
 			var time = Date.now() * 0.0005;
-			light.position.set(randNumX, 10, randNumZ);
+			light.position.x = randNumX;
+			light.position.y = 1.5;
+			light.position.z = randNumZ;
 			
 			spheres.push(sphere);
-			//objects.push(sphere);
+			objects.push(sphere);
 			scene.add(sphere);
 			scene.add(light);
 			
@@ -522,7 +473,7 @@
                 wand.position.set( 0, 1, 2);
 				wand.scale.set( .2, .2, .2 );
 
-                //scene.add( wand );
+                scene.add( wand );
 
             }
         );
@@ -594,18 +545,18 @@
 				controls.movements.right = boolean;
 				break;
 
-			//case 32: // space
-				//if (!isKeyDown) {
-					//controls.jump();
-				//}
-				//break;
+			case 32: // space
+				if (!isKeyDown) {
+					controls.jump();
+				}
+				break;
 
-            //case 16: // shift
-                //controls.walk(boolean);
-                //break;
+            case 16: // shift
+                controls.walk(boolean);
+                break;
 
-            //case 67: // crouch (CTRL + W etc destroys tab in Chrome!)
-                //controls.crouch(boolean);
+            case 67: // crouch (CTRL + W etc destroys tab in Chrome!)
+                controls.crouch(boolean);
 
 		}
 	}
@@ -641,7 +592,3 @@
 	    stats.update();
 
     };
-</script>
-
-</body>
-</html>

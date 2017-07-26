@@ -1,19 +1,18 @@
 Appearance:
-Misty / particles in scenary *
+Misty / particles in scenary
+Instructions design
+Loading screen
 
 Functionality:
-Loading screen
-Glowing orbs(?) randomly generated
-
+Prevent user walking off the map / invisible wall mesh?
 
 Orbs
 - Randomly generated around the map *
 - Does not collide with other objects
 - Randomly colors *
 - Glow added to orbs *
-- Cross hair
-- Raycaster to shoot at orbs
-- Orbs lose light when shot
+- Raycaster to detect collision
+- Orbs lose light with collision
 - Counter increases once intersected
 
 Improvements:
