@@ -1,80 +1,38 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-	<title>My first three.js app</title>
+	<title>Vizune | Three.js experiment</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-	<style>
-		body, html { margin: 0; padding: 0; overflow: hidden; }
-		canvas { width: 100%; height: 100% }
-        #blocker {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-        #instructions {
-            width: 100%;
-            height: 100%;
-            display: -webkit-box;
-            display: -moz-box;
-            display: box;
-            -webkit-box-orient: horizontal;
-            -moz-box-orient: horizontal;
-            box-orient: horizontal;
-            -webkit-box-pack: center;
-            -moz-box-pack: center;
-            box-pack: center;
-            -webkit-box-align: center;
-            -moz-box-align: center;
-            box-align: center;
-            color: #ffffff;
-            text-align: center;
-            cursor: pointer;
-        }
-		#container {
-			position: fixed;
-		}
-		#counter {
-			position: fixed;
-			right: 0;
-			bottom: 0;
-			font-size: 3.5rem;
-			padding: .5rem;
-			color:#000;
-			background: rgba(255,255,255,.4);
-		}
-	</style>
+	<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div id="container"></div>
-<div id="counter"></div>
+	<div id="container"></div>
+	<div id="counter"></div>
 
-    <script src="js/three.js"></script>
-    <script src="js/Detector.js"></script>
-    <!--<script src="js/OrbitControls.js"></script>-->
-    <script src="js/MTLLoader.js"></script>
-    <script src="js/OBJLoader.js"></script>
-   	<!--<script src="js/PointerLockControls.js"></script>-->
-    <script src="js/stats.min.js"></script>
-	<script src="js/FPSControls.js"></script>
-	<script src="js/pointerlock.js"></script>
-	
-<div id="blocker">
-	<div id="instructions">
-		<span style="font-size:40px">Click to play</span>
-		<br />
-		(W, A, S, D = Move, <!--SPACE = Jump, -->MOUSE = Look around)
+	<div id="blocker">
+		<div id="instructions">
+			<span style="font-size:40px">Click to play</span>
+			<br />
+			(W, A, S, D = Move, <!--SPACE = Jump, -->MOUSE = Look around)
+		</div>
 	</div>
-</div>
 
+<script src="js/three.js"></script>
+<script src="js/Detector.js"></script>
+<!--<script src="js/OrbitControls.js"></script>-->
+<script src="js/MTLLoader.js"></script>
+<script src="js/OBJLoader.js"></script>
+<!--<script src="js/PointerLockControls.js"></script>-->
+<script src="js/stats.min.js"></script>
+<script src="js/FPSControls.js"></script>
+<script src="js/pointerlock.js"></script>
 
 <script>
-
 	var scene, renderer, camera;    
     var crate, crateTexture, crateNormalMap, crateBumpMap;
 	var wand, wandTexture, wandNormalMap, wandBumpMap;
-    var floorTexture, floorNormalMap, floorBumpMap;
+    var floorTexture, floorNormalMap, floorBumpMap, floorHeight;
     var container, stats, counter;
     var RESOURCES_LOADED = false;
 	var controls;
@@ -142,7 +100,6 @@
     var RESOURCES_LOADED = false;
 
     // Model
-    // Fox: https://clara.io/view/1a03ac6b-d6b5-4c2d-9f1a-c80068311396#
     // Tree: http://kenney.nl/assets/nature-pack-extended
     // Wand: https://www.turbosquid.com/FullPreview/Index.cfm/ID/810456
 
@@ -166,82 +123,76 @@
 	    container = document.getElementById('container');
 		counter = document.getElementById('counter');
 		eventHandlers();
+		
 	    // Set the scene...
 	    scene = new THREE.Scene();
-
-		// Camera
-		//camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 0.1, 9000 );
-		//controls = new THREE.PointerLockControls( camera, 0, 1.5, true, objects );
-		//scene.add( controls.getPlayer() );
-		
 		camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 9000 );
 		controls = new THREE.PointerLockControls( camera, 0, 10, true, objects );
 		scene.add( controls.getPlayer() );
 		
 
-		var onKeyDown = function(event) {
-			switch ( event.keyCode ) {
+		var onKeyDown = function(e) {
+			switch ( e.keyCode ) {
 
-						case 38: // up
-						case 87: // w
-							moveForward = true;
-							break;
+				case 38: // up
+				case 87: // w
+					moveForward = true;
+					break;
 
-						case 37: // left
-						case 65: // a
-							moveLeft = true; break;
+				case 37: // left
+				case 65: // a
+					moveLeft = true; break;
 
-						case 40: // down
-						case 83: // s
-							moveBackward = true;
-							break;
+				case 40: // down
+				case 83: // s
+					moveBackward = true;
+					break;
 
-						case 39: // right
-						case 68: // d
-							moveRight = true;
-							break;
+				case 39: // right
+				case 68: // d
+					moveRight = true;
+					break;
 
-						case 32: // space
-							if ( canJump === true ) velocity.y += 350;
-							canJump = false;
-							break;
+				case 32: // space
+					if ( canJump === true ) velocity.y += 350;
+					canJump = false;
+					break;
 
-					}
+			}
 		};
 
-		var onKeyUp = function ( event ) {
+		var onKeyUp = function (e) {
 
-					switch( event.keyCode ) {
+			switch( e.keyCode ) {
 
-						case 38: // up
-						case 87: // w
-							moveForward = false;
-							break;
+				case 38: // up
+				case 87: // w
+					moveForward = false;
+					break;
 
-						case 37: // left
-						case 65: // a
-							moveLeft = false;
-							break;
+				case 37: // left
+				case 65: // a
+					moveLeft = false;
+					break;
 
-						case 40: // down
-						case 83: // s
-							moveBackward = false;
-							break;
+				case 40: // down
+				case 83: // s
+					moveBackward = false;
+					break;
 
-						case 39: // right
-						case 68: // d
-							moveRight = false;
-							break;
+				case 39: // right
+				case 68: // d
+					moveRight = false;
+					break;
 
-					}
+			}
 
-				};
+		};
 
 		document.addEventListener( 'keydown', onKeyDown, false );
 		document.addEventListener( 'keyup', onKeyUp, false );
 
 		raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
-
 		scene.fog = new THREE.Fog( 0xcccccc, camera.position.z, 500 );
 
 	    // LOADING SCREEN
@@ -267,13 +218,6 @@
 	    var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.3);
 	    scene.add(ambientLight);
 
-	    var pointLight = new THREE.PointLight( 0xFFFFFF, 0.5, 18 );
-	    pointLight.position.set( 2, 6, -3);
-	    pointLight.castShadow = true;
-	    pointLight.shadow.camera.near = 0.1;
-	    pointLight.shadow.camera.far = 25;
-	    //scene.add(pointLight);
-
 	    // Skybox
 	    var skyCube = new THREE.CubeTextureLoader( loadingManager )
 		    .setPath( "./img/skybox/" )
@@ -284,11 +228,13 @@
 	    var textureLoader = new THREE.TextureLoader( loadingManager );
 
 	    // Floor
-		floorTexture = textureLoader.load("img/grass/pixel.jpg");
-	    floorNormalMap = textureLoader.load("img/grass/grass_n.jpg");
-	    floorBumpMap = textureLoader.load("img/grass/grass_h.jpg");
+		// Resource: https://opengameart.org/content/snow-and-ice-batch-of-15-seamless-textures-with-normalmaps-snowbnjpg
+		floorHeight = 1000;
+		floorTile = 64;
 
-		floorTile = 128;
+		floorTexture = textureLoader.load("img/snow/SnowB_S.jpg");
+	    floorNormalMap = textureLoader.load("img/snow/SnowB_N.jpg");
+	    //floorBumpMap = textureLoader.load("img/...");
 
 		floorTexture.wrapS = THREE.RepeatWrapping;
 		floorTexture.wrapT = THREE.RepeatWrapping;
@@ -298,73 +244,24 @@
 		floorNormalMap.wrapT = THREE.RepeatWrapping;
 		floorNormalMap.repeat.set( floorTile, floorTile );
 
-		floorBumpMap.wrapS = THREE.RepeatWrapping;
-		floorBumpMap.wrapT = THREE.RepeatWrapping;
-		floorBumpMap.repeat.set( floorTile, floorTile );
+		//floorBumpMap.wrapS = THREE.RepeatWrapping;
+		//floorBumpMap.wrapT = THREE.RepeatWrapping;
+		//floorBumpMap.repeat.set( floorTile, floorTile );
 
-		var floorHeight = 1000;
-		//floorGeometry = new THREE.SphereGeometry(floorHeight, 10, 6, 0, (Math.PI * 2), 0, 0.2);
-		//floorGeometry.applyMatrix( new THREE.Matrix4().makeTranslation(0, -floorHeight, 0) );
 		floorGeometry = new THREE.PlaneGeometry(floorHeight, floorHeight, 10, 6);
-		
 
 		var floorMaterial = new THREE.MeshPhongMaterial( 
-			    { 
-				    //color: 0x1f7e4e,
-				    map: floorTexture,
-				    //bumpMap: floorBumpMap,
-				    //normalMap: floorNormalMap
-			    } 
-		    )
+		{ 
+			//color: 0x1f7e4e,
+			map: floorTexture,
+			bumpMap: floorBumpMap
+			//normalMap: floorNormalMap
+		});
 
 		floorMesh = new THREE.Mesh( floorGeometry, floorMaterial );
 		floorMesh.rotation.x -= Math.PI / 2;
 		objects.push( floorMesh );
-		scene.add( floorMesh  );
-		
-
-	    var particles = new THREE.Geometry();
-	    var pMaterial = new THREE.PointsMaterial({
-		    color: 0xffffff,
-		    size: .25,
-		    transparent:true,
-		    opacity:.25,
-		    // map : particle_texture
-	    });
-
-	    for( var i=0; i<900; i++ ){
-		    var x = (Math.random() - 0.5 ) * Math.sin(i)*800;
-		    var y = (Math.random() - 0.5 ) * Math.cos(i)* 50;
-		    var z = (Math.random() - 0.5 ) * Math.sin(i)*800;
-
-		    particles.vertices.push(new THREE.Vector3(x,y,z));
-	    }
-	    var particleSystem_1 = new THREE.Points(particles,pMaterial);
-	    scene.add(particleSystem_1);
-			
-
-	    // Crate object
-	    // Resource: https://opengameart.org/content/3-crate-textures-w-bump-normal
-	    crateTexture = textureLoader.load("./img/crate_diffuse.png");
-	    crateNormalMap = textureLoader.load("./img/crate_normal.png");
-	    crateBumpMap = textureLoader.load("./img/crate_bump.png");
-			
-
-	    crate = new THREE.Mesh(
-		    new THREE.BoxGeometry( 1.5, 1.5, 1.5),
-		    new THREE.MeshPhongMaterial( 
-			    { 
-				    color: 0xFFFFFF,
-				    map: crateTexture,
-				    bumpMap: crateBumpMap,
-				    normalMap: crateNormalMap
-			    } )
-	    );
-	    crate.receiveShadow = true;
-	    crate.castShadow = true;
-	    crate.position.set(20,1,0);
-		//objects.push( crate );
-	    //scene.add(crate);
+		scene.add( floorMesh );
 
 	    // MTL Model
 	    // Resource: https://www.turbosquid.com/FullPreview/Index.cfm/ID/1008420
@@ -375,75 +272,72 @@
 		var boxGeometry = new THREE.BoxGeometry( 10, 100, 10 );
 		var boxMaterial = new THREE.MeshPhongMaterial( {color: 0xFFFFFF, opacity: 0, transparent: true});
 
-		    mtlLoader.load("models/tree.mtl", function(materials){
-			    materials.preload();
-			    objLoader.setMaterials(materials);
+		mtlLoader.load("models/tree.mtl", function(materials){
+			materials.preload();
+			objLoader.setMaterials(materials);
 
-				for( var i=0; i<200; i++ ){
+			for( var i=0; i<200; i++ ){
+			
+				objLoader.load("models/tree.obj", function(tree){
+
+					tree.traverse(function(node){
+					if( node instanceof THREE.Mesh ){
+						node.castShadow = true;
+						node.receiveShadow = true;
+					}
+				});
+
+			var randPosX = 0;
+				randPosX = Math.floor(Math.random() * 65 - 30) * 14;
+
+			var randPosZ = 0;
+				randPosZ = Math.floor(Math.random() * 65 - 30) * 12;
+			
+			var randScaleX = 0;
+				randScaleX = Math.random() + 5;
 				
-			    objLoader.load("models/tree.obj", function(tree){
-					
-						
-					    tree.traverse(function(node){
-					    if( node instanceof THREE.Mesh ){
-						    node.castShadow = true;
-						    node.receiveShadow = true;
-					    }
-				    });
-
-					var randPosX = 0;
-						randPosX = Math.floor(Math.random() * 65 - 30) * 14;
-
-					var randPosZ = 0;
-						randPosZ = Math.floor(Math.random() * 65 - 30) * 12;
-					
-					var randScaleX = 0;
-						randScaleX = Math.random() + 5;
-						
-					var randScaleY = 0;
-						randScaleY = Math.random() + 6;
-						
-					var randScaleZ = 0;
-						randScaleZ = Math.random() + 7;
-						
-					var randRotate = 0;
-						randRotate = Math.random() + 0.5;
-
-					var boxmesh = new THREE.Mesh( boxGeometry, boxMaterial );
-
-					boxmesh.position.x = randPosX;
-					boxmesh.position.y = 0.5;
-					boxmesh.position.z = randPosZ;
-					
-					tree.position.x =  randPosX;
-                    tree.position.y = 0.5;
-                    tree.position.z = randPosZ;
-					
-					//boxmesh.scale.x = randScaleX;
-                    //boxmesh.scale.y = randScaleY;
-                    //boxmesh.scale.z = randScaleZ;
-					
-					tree.scale.x = randScaleX;
-                    tree.scale.y = randScaleY;
-                    tree.scale.z = randScaleZ;
-					
-					boxmesh.rotation.y = randRotate;
-					
-					tree.rotation.y = randRotate;
-
-					//boxes.push( boxmesh );
-					objects.push( boxmesh );
-					scene.add( boxmesh );
-
-					//boxes.push( mesh );
-					objects.push( tree );
-					scene.add( tree );
-
-					});
+			var randScaleY = 0;
+				randScaleY = Math.random() + 6;
 				
-			    }
+			var randScaleZ = 0;
+				randScaleZ = Math.random() + 7;
+				
+			var randRotate = 0;
+				randRotate = Math.random() + 0.5;
 
-		    });
+			var boxmesh = new THREE.Mesh( boxGeometry, boxMaterial );
+
+			boxmesh.position.x = randPosX;
+			boxmesh.position.y = 0.5;
+			boxmesh.position.z = randPosZ;
+			
+			tree.position.x =  randPosX;
+			tree.position.y = 0.5;
+			tree.position.z = randPosZ;
+			
+			//boxmesh.scale.x = randScaleX;
+			//boxmesh.scale.y = randScaleY;
+			//boxmesh.scale.z = randScaleZ;
+			
+			tree.scale.x = randScaleX;
+			tree.scale.y = randScaleY;
+			tree.scale.z = randScaleZ;
+			
+			boxmesh.rotation.y = randRotate;
+			tree.rotation.y = randRotate;
+
+			objects.push( boxmesh );
+			scene.add( boxmesh );
+
+			//boxes.push( mesh );
+			objects.push( tree );
+			scene.add( tree );
+
+			});
+			
+			}
+
+		});
 
 	    // ORBS
 	    for( var i=0; i<15; i++ )
@@ -461,7 +355,6 @@
 			var randNumZ = Math.floor(Math.random() * 55 - 30) * 8;
 
 			sphere.position.set(randNumX, 10, randNumZ);
-
 			
 			light = new THREE.PointLight( randColor, 2, 50 );
 			light.add( new THREE.Mesh( sphereGeometry, sphereMaterial));
@@ -492,53 +385,21 @@
 		counterVal = 0;
 		counter.append(counterVal);
 
-		addWand()
-
     }; // end of init()
-
-	function addWand() {
-		// Wand
-		// Resource: https://www.arroway-textures.ch/en/textures/wood-105
-		var wLoader = new THREE.ObjectLoader(loadingManager);
-		wMaterial = new THREE.MeshPhongMaterial();
-
-		var textureLoader = new THREE.TextureLoader(loadingManager);
-
-		wandTexture = textureLoader.load("./img/wood-texture.jpg");
-	    wandNormalMap = textureLoader.load("./img/wood-texture-normal.jpg");
-	    wandBumpMap = textureLoader.load("./img/wood-texture-bump.jpg");
-
-		wand = wLoader.load
-        (
-            'cherry-wand.json',
-            function( wand )
-            {
-				wand.traverse(function(child) {
-					if(child instanceof THREE.Mesh) {
-						child.material = wMaterial;
-					}
-				})
-
-                wand.position.set( 0, 1, 2);
-				wand.scale.set( .2, .2, .2 );
-
-                //scene.add( wand );
-
-            }
-        );
-	}
 
 	function onWindowResize() {
 		var width = window.innerWidth;
 		var height = window.innerHeight;
+
 		camera.aspect = width / height;
 		camera.updateProjectionMatrix();
+
 		renderer.setSize(width, height);
 	}
 
     function animate() {
 
-        if (RESOURCES_LOADED == false) {
+        if (!RESOURCES_LOADED) {
             requestAnimationFrame(animate);
 
             loadingScreen.box.position.x -= 0.05;
@@ -551,21 +412,29 @@
 
 		requestAnimationFrame( animate );
 
-			if ( controlsEnabled ) {
-				controls.updateControls();
-			}
+		if ( controlsEnabled ) {
+			controls.updateControls();
+		}
 
-        update();
+        stats.update();
         renderer.render(scene, camera);
     }
 
 	function eventHandlers() {
+		var onKeyDown = function(e) { 
+			e.preventDefault(); 
+			e.stopPropagation(); 
+			handleKeyInteraction(e.keyCode, true); 
+		}
 
-		var onKeyDown = function ( event ) { event.preventDefault(); event.stopPropagation(); handleKeyInteraction(event.keyCode, true); };
-		var onKeyUp = function ( event ) { event.preventDefault(); event.stopPropagation(); handleKeyInteraction(event.keyCode, false); };
+		var onKeyUp = function(e) { 
+			e.preventDefault();
+			e.stopPropagation();
+			handleKeyInteraction(e.keyCode, false); 
+		}
+
 		document.addEventListener( 'keydown', onKeyDown, false );
 		document.addEventListener( 'keyup', onKeyUp, false );
-
 		window.addEventListener( 'resize', onWindowResize, false );
 	}
 
@@ -610,37 +479,6 @@
 		}
 	}
 
-    function update() {
-	    /*var time = Date.now() * 0.0005;
-	    light1.position.x = Math.sin( time * 0.7 ) * 30;
-	    light1.position.y = Math.cos( time * 0.5 ) * 40;
-	    light1.position.z = Math.cos( time * 0.3 ) * 30;
-
-	    light2.position.x = Math.cos( time * 0.3 ) * 30;
-	    light2.position.y = Math.sin( time * 0.5 ) * 40;
-	    light2.position.z = Math.sin( time * 0.7 ) * 30;
-
-	    light3.position.x = Math.sin( time * 0.7 ) * 30;
-	    light3.position.y = Math.cos( time * 0.3 ) * 40;
-	    light3.position.z = Math.sin( time * 0.5 ) * 30;
-		
-
-		wand.position.set(
-                	camera.position.x - Math.sin(camera.rotation.y),
-                	camera.position.y - 0.5 + Math.sin(time*4 + camera.position.x + camera.position.z) * 0.01,
-                	camera.position.z + Math.cos(camera.rotation.y)
-				);
-
-				wand.rotation.set(
-					camera.rotation.x,
-					camera.rotation.y - Math.PI/2.1,
-					camera.rotation.z
-				);
-*/
-
-	    stats.update();
-
-    };
 </script>
 
 </body>
